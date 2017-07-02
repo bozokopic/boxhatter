@@ -1,0 +1,4 @@
+doit
+aiohttp
+libvirt-python
+pyyaml

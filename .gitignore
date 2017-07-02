@@ -1,0 +1,7 @@
+__pycache__
+/build
+/dist
+/.doit.*
+/node_modules
+/src_py/hatter/json_validator.py
+/src_js/hatter/validator.js
