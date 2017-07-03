@@ -9,6 +9,7 @@ Key features:
 
     * automated projects based on git repositories
     * virtual machines as execution runners
+    * virtual machine snapshots for consistent execution environments
     * per project configuration as YAML file inside project's repository
     * web based control and monitoring interface
 
@@ -52,8 +53,6 @@ TODO
 
 * automation executor
 
-    * JSON Schema describing YAML configuration
-    * test and integrate python libvirt interface
     * implement retrieval of git repositories and communication with VM guest
     * implement execution of automated tasks provided by YAML configuration
     * add logging facility for monitoring execution process
@@ -67,9 +66,14 @@ TODO
     * JSON Schema describing messages used in communication between backend and
       frontend
     * implement functionality provided by internal communication protocol
-    * write complete setup.py
 
 * user interface - frontend
 
     * implement communication with backend
     * create user interface
+
+* other
+
+    * documentation
+    * write complete setup.py
+    * distribution

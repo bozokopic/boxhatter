@@ -1,0 +1,34 @@
+<domain type='kvm'>
+  <name>archlinux</name>
+  <os>
+    <type>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <memory unit="G">1</memory>
+  <pm>
+    <suspend-to-mem enabled='no'/>
+    <suspend-to-disk enabled='no'/>
+  </pm>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <clock offset='utc'/>
+  <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+    <disk type='file'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='/srv/libvirt/archlinux.qcow2'/>
+      <target dev='hda' bus='virtio'/>
+    </disk>
+    <interface type='network'>
+      <source network="default"/>
+    </interface>
+    <video>
+      <model type='vga' vram='65536' heads='1'/>
+    </video>
+  </devices>
+</domain>

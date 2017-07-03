@@ -1,0 +1,10 @@
+<network>
+    <name>default</name>
+    <bridge name="virbr0"/>
+    <forward mode="nat"/>
+    <ip address="10.0.0.1" netmask="255.255.255.0">
+        <dhcp>
+            <range start="10.0.0.10" end="10.0.0.100"/>
+        </dhcp>
+    </ip>
+</network>
