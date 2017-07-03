@@ -53,8 +53,6 @@ TODO
 
 * automation executor
 
-    * implement retrieval of git repositories and communication with VM guest
-    * implement execution of automated tasks provided by YAML configuration
     * add logging facility for monitoring execution process
 
 * web server - backend
