@@ -7,7 +7,7 @@ type: object
 required:
     - domain
     - ssh_username
-    - ssh_key
+    - ssh_password
     - script
 properties:
     uri:
@@ -31,10 +31,10 @@ properties:
         description: |
             Username for connecting to VM guest SSH daemon
         type: string
-    ssh_key:
-        title: SSH key
+    ssh_password:
+        title: SSH password
         description: |
-            Content of SSH key used for connecting to VM guest SSH daemon
+            Password for connecting to VM guest SSH daemon
         type: string
     script:
         title: Script
