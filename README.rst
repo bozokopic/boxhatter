@@ -51,10 +51,6 @@ creates `dist` folder containing Hatter distribution.
 TODO
 ----
 
-* automation executor
-
-    * add logging facility for monitoring execution process
-
 * web server - backend
 
     * define basic structure for SQLite database

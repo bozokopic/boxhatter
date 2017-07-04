@@ -12,23 +12,33 @@ import paramiko
 import hatter.json_validator
 
 
-def run(repo_path, commit='HEAD', archive_name='hatter_archive'):
+def run(log, repo_path, commit='HEAD', archive_name='hatter_archive'):
+    log.info('starting executor for repository {} ({})'.format(repo_path,
+                                                               commit))
+    t_begin = time.monotonic()
     archive_file_name = archive_name + '.tar.gz'
     with tempfile.TemporaryDirectory() as tempdir:
         archive_path = pathlib.Path(tempdir) / archive_file_name
+        log.info('fetching remote repository')
         _git_archive(repo_path, commit, archive_path)
+        log.info('loading project configuration')
         conf = _load_conf(archive_path)
+        log.info('starting virtual machine')
         with contextlib.closing(_VM(conf['vm'])) as vm:
+            log.info('creating SSH connection')
             with contextlib.closing(_SSH(conf['ssh'], vm.address)) as ssh:
-                ssh.upload(archive_path, archive_file_name)
+                log.info('transfering repository to virtual machine')
                 ssh.execute('rm -rf {} {}'.format(archive_file_name,
                                                   archive_name))
                 ssh.upload(archive_path, archive_file_name)
                 ssh.execute('mkdir {}'.format(archive_name))
                 ssh.execute('tar xf {} -C {}'.format(archive_file_name,
                                                      archive_name))
+                log.info('executing scripts')
                 for script in conf['scripts']:
-                    ssh.execute(script, archive_name)
+                    ssh.execute(script, archive_name, log)
+    t_end = time.monotonic()
+    log.info('executor finished (duration: {}s)'.format(t_end - t_begin))
 
 
 class _VM:
@@ -103,15 +113,16 @@ class _SSH:
         with contextlib.closing(self._conn.open_sftp()) as sftp:
             sftp.put(str(src_path), str(dst_path))
 
-    def execute(self, cmd, cwd='.'):
+    def execute(self, cmd, cwd='.', log=None):
+        if log:
+            log.info('executing command: {}'.format(cmd))
         with contextlib.closing(self._conn.invoke_shell()) as shell:
             shell.set_combine_stderr(True)
             shell.exec_command('cd {} && {}'.format(cwd, cmd))
             with contextlib.closing(shell.makefile()) as f:
                 data = f.read()
-                # TODO remove print
-                print('>> ', cmd)
-                print(data)
+                if log:
+                    log.info('command output: {}'.format(data))
             exit_code = shell.recv_exit_status()
             if exit_code > 0:
                 raise Exception('command exit code is {}'.format(exit_code))
