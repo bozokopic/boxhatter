@@ -20,7 +20,7 @@ def main():
         conf = yaml.safe_load(conf_file)
     hatter.json_validator.validate(conf, 'hatter://server.yaml#')
 
-    if conf['log']:
+    if 'log' in conf:
         logging.config.dictConfig(conf['log'])
 
     if args.web_path:
@@ -62,7 +62,7 @@ def _create_parser():
 
     named_arguments = parser.add_argument_group('required named arguments')
     named_arguments.add_argument(
-        '--conf', required=True, metavar='path', dest='conf_path',
+        '-c', '--conf', required=True, metavar='path', dest='conf',
         help='configuration path')
 
     return parser

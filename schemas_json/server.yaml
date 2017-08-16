@@ -30,28 +30,8 @@ properties:
         default: '/webhook'
     repositories:
         title: Repositories
-        description: List of all repositories with project definitions
+        description: List of all repository urls
         type: array
         items:
-            oneOf:
-                - "$ref": "hatter://server.yaml#/definitions/gitlab"
-                - "$ref": "hatter://server.yaml#/definitions/github"
-definitions:
-    gitlab:
-        type: object
-        required:
-            - type
-            - token
-        properties:
-            type:
-                enum:
-                    - GITLAB
-    github:
-        type: object
-        required:
-            - type
-        properties:
-            type:
-                enum:
-                    - GITHUB
+            type: string
 ...

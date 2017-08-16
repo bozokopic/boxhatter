@@ -1,4 +1,6 @@
 import asyncio
+import json
+import collections
 import aiohttp.web
 
 
@@ -34,7 +36,18 @@ class WebServer:
         return ws
 
     async def _webhook_handler(self, request):
-        pass
+        try:
+            if not ({'X-Gitlab-Event', 'X-GitHub-Event'} &
+                    set(request.headers.keys())):
+                raise Exception('unsupported webhook request')
+            body = await request.read()
+            data = json.loads(body)
+            req = _parse_webhook_request(request.headers, data)
+            for commit in req.commits:
+                self._backend.enqueue(req.url, commit)
+        except Exception:
+            pass
+        return aiohttp.web.Response()
 
 
 class Client:
@@ -44,3 +57,18 @@ class Client:
 
     async def run(self):
         pass
+
+
+WebhookRequest = collections.namedtuple('WebhookRequest', ['url', 'commits'])
+
+
+def _parse_webhook_request(headers, data):
+    if headers.get('X-Gitlab-Event') == 'Push Hook':
+        url = data['repository']['git_http_url']
+        commits = [commit['id'] for commit in data['commits']]
+    elif headers.get('X-GitHub-Event') == 'push':
+        url = data['repository']['clone_url']
+        commits = [commit['id'] for commit in data['commits']]
+    else:
+        raise Exception('unsupported webhook event')
+    return WebhookRequest(url, commits)

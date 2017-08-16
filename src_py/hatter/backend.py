@@ -7,3 +7,6 @@ class Backend:
 
     async def async_close(self):
         pass
+
+    def enqueue(self, url, commit):
+        pass
