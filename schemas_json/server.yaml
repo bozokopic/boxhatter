@@ -7,6 +7,8 @@ type: object
 required:
     - repositories
 properties:
+    log:
+        "$ref": "hatter://logging.yaml#"
     host:
         title: Host
         description: Listening host name
@@ -40,7 +42,6 @@ definitions:
         required:
             - type
             - token
-
         properties:
             type:
                 enum:

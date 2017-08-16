@@ -3,4 +3,4 @@ aiohttp
 libvirt-python
 pyyaml
 paramiko
-GitPython
+setuptools

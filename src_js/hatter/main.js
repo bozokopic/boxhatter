@@ -2,7 +2,6 @@ import bean from 'bean';
 import R from 'ramda';
 
 import r from 'hatter/renderer';
-import * as l from 'hatter/lenses';
 import * as common from 'hatter/common';
 import * as vt from 'hatter/vt';
 

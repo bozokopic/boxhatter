@@ -1,6 +1,4 @@
 var path = require('path');
-var fs = require('fs');
-var webpack = require('webpack');
 
 
 module.exports = [
@@ -15,23 +13,13 @@ module.exports = [
         module: {
             rules: [
                 {
-                    test: /\.js$/,
-                    exclude: /node_modules/,
-                    use: {
-                        loader: 'babel-loader'
-                    }
-                },
-                {
                     test: /\.scss$/,
                     use: ["style-loader", "css-loader", "resolve-url-loader", "sass-loader?sourceMap"]
                 },
-
-                // TODO isolate fonts only
-                { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, use: "url-loader?name=fonts/[hash].[ext]&limit=10000&mimetype=application/font-woff" },
-                { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, use: "url-loader?name=fonts/[hash].[ext]&limit=10000&mimetype=application/font-woff" },
-                { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, use: "url-loader?name=fonts/[hash].[ext]&limit=10000&mimetype=application/octet-stream" },
-                { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, use: "file-loader?name=fonts/[hash].[ext]" },
-                { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, use: "url-loader?name=fonts/[hash].[ext]&limit=10000&mimetype=image/svg+xml" }
+                {
+                    test: /node_modules.*\.(woff|woff2|ttf|eot|svg)$/,
+                    use: "file-loader?name=fonts/[hash].[ext]"
+                }
             ]
         },
         resolve: {
