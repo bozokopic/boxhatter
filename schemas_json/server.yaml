@@ -1,0 +1,56 @@
+---
+"$schema": "http://json-schema.org/schema#"
+id: "hatter://server.yaml#"
+title: Server
+description: Server configuration
+type: object
+required:
+    - repositories
+properties:
+    host:
+        title: Host
+        description: Listening host name
+        type: string
+        default: "0.0.0.0"
+    port:
+        title: TCP port
+        description: Listening TCP port
+        type: integer
+        default: 24000
+    db_path:
+        title: DB path
+        description: SQLite database path
+        type: string
+        default: hatter.db
+    webhook_path:
+        title: Webhook path
+        type: string
+        default: '/webhook'
+    repositories:
+        title: Repositories
+        description: List of all repositories with project definitions
+        type: array
+        items:
+            oneOf:
+                - "$ref": "hatter://server.yaml#/definitions/gitlab"
+                - "$ref": "hatter://server.yaml#/definitions/github"
+definitions:
+    gitlab:
+        type: object
+        required:
+            - type
+            - token
+
+        properties:
+            type:
+                enum:
+                    - GITLAB
+    github:
+        type: object
+        required:
+            - type
+        properties:
+            type:
+                enum:
+                    - GITHUB
+...
