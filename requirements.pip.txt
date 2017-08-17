@@ -4,3 +4,4 @@ libvirt-python
 pyyaml
 paramiko
 setuptools
+sphinx

@@ -1,7 +1,8 @@
 import asyncio
 import json
-import collections
 import aiohttp.web
+
+from hatter import util
 
 
 async def create_web_server(backend, host, port, webhook_path, web_path):
@@ -44,7 +45,7 @@ class WebServer:
             data = json.loads(body)
             req = _parse_webhook_request(request.headers, data)
             for commit in req.commits:
-                self._backend.enqueue(req.url, commit)
+                self._backend.add_job(req.url, commit)
         except Exception:
             pass
         return aiohttp.web.Response()
@@ -59,7 +60,7 @@ class Client:
         pass
 
 
-WebhookRequest = collections.namedtuple('WebhookRequest', ['url', 'commits'])
+WebhookRequest = util.namedtuple('WebhookRequest', 'url', 'commits')
 
 
 def _parse_webhook_request(headers, data):

@@ -2,13 +2,14 @@ import sys
 import asyncio
 import argparse
 import pdb
-import contextlib
 import yaml
 import logging.config
 import atexit
 import pkg_resources
+import pathlib
 
 import hatter.json_validator
+from hatter import util
 from hatter.backend import Backend
 from hatter.server import create_web_server
 
@@ -29,14 +30,14 @@ def main():
         atexit.register(pkg_resources.cleanup_resources)
         web_path = pkg_resources.resource_filename('hatter', 'web')
 
-    _run_until_complete_without_interrupt(async_main(conf, web_path))
+    util.run_until_complete_without_interrupt(async_main(conf, web_path))
 
 
 async def async_main(conf, web_path):
     backend = None
     web_server = None
     try:
-        backend = Backend(conf.get('db_path', 'hatter.db'))
+        backend = Backend(pathlib.Path(conf.get('db_path', 'hatter.db')))
         web_server = await create_web_server(
             backend, conf.get('host', '0.0.0.0'), conf.get('port', 24000),
             conf.get('webhook_path', '/webhook'), web_path)
@@ -66,30 +67,6 @@ def _create_parser():
         help='configuration path')
 
     return parser
-
-
-def _run_until_complete_without_interrupt(future):
-    async def ping_loop():
-        with contextlib.suppress(asyncio.CancelledError):
-            while True:
-                await asyncio.sleep(1)
-
-    task = asyncio.ensure_future(future)
-    if sys.platform == 'win32':
-        ping_loop_task = asyncio.ensure_future(ping_loop())
-    with contextlib.suppress(KeyboardInterrupt):
-        asyncio.get_event_loop().run_until_complete(task)
-    asyncio.get_event_loop().call_soon(task.cancel)
-    if sys.platform == 'win32':
-        asyncio.get_event_loop().call_soon(ping_loop_task.cancel)
-    while not task.done():
-        with contextlib.suppress(KeyboardInterrupt):
-            asyncio.get_event_loop().run_until_complete(task)
-    if sys.platform == 'win32':
-        while not ping_loop_task.done():
-            with contextlib.suppress(KeyboardInterrupt):
-                asyncio.get_event_loop().run_until_complete(ping_loop_task)
-    return task.result()
 
 
 if __name__ == '__main__':

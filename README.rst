@@ -29,6 +29,12 @@ Development requirements
 * yarn
 
 
+Documentation
+-------------
+
+Online documentation available at `http://hatter.readthedocs.io`.
+
+
 Build
 -----
 
@@ -53,9 +59,6 @@ TODO
 
 * web server - backend
 
-    * define basic structure for SQLite database
-    * provide web hooks for incomming push notifications (support Github and
-      Gitlab events)
     * orchestrate automation executor
     * JSON Schema describing messages used in communication between backend and
       frontend

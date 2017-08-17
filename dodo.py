@@ -52,6 +52,7 @@ def task_clean_all():
     return {'actions': [(rm_rf, ['build', 'dist'])],
             'task_dep': ['pyhatter_clean',
                          'jshatter_clean',
+                         'docs_clean',
                          'dist_clean']}
 
 
@@ -270,3 +271,23 @@ def task_jshatter_watch():
 
     return {'actions': ['yarn run watch'],
             'task_dep': ['jshatter_install_deps', 'jshatter_gen']}
+
+
+# ############################ docs tasks #####################################
+
+def task_docs_clean():
+    """Docs - clean"""
+
+    return {'actions': [(rm_rf, ['build/docs'])]}
+
+
+def task_docs_build():
+    """Docs - build documentation"""
+
+    def build_html(src, dest):
+        mkdir_p(Path(dest).parent)
+        subprocess.Popen([
+            'sphinx-build', '-q', '-b', 'html',
+            str(Path(src)), str(Path(dest))]).wait()
+
+    return {'actions': [(build_html, ['docs', 'build/docs'])]}
