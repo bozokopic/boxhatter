@@ -1,2 +1,7 @@
-Hatter
-======
+Content
+=======
+
+.. toctree::
+    :includehidden:
+
+    introduction
