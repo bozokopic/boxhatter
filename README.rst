@@ -18,8 +18,9 @@ Runtime requirements
 --------------------
 
 * python >=3.6
+* libvirt
 
-Additional required python packages are listed in `requirements.pip.txt`.
+Additional required python packages are listed in `requirements.pip.run.txt`.
 
 
 Development requirements
@@ -28,20 +29,22 @@ Development requirements
 * nodejs >=7
 * yarn
 
+Additional required python packages are listed in `requirements.pip.dev.txt`.
+
 
 Documentation
 -------------
 
-Online documentation available at `http://hatter.readthedocs.io`.
+Online documentation available at `<http://hatter.readthedocs.io>`_.
 
 
 Build
 -----
 
-Build tool used for Hatter is pydoit (`http://pydoit.org/`). It can be
+Build tool used for Hatter is pydoit (`<http://pydoit.org>`_). It can be
 installed together with other python dependencies by running::
 
-    $ pip install -r requirements.pip.txt
+    $ pip install -r requirements.pip.dev.txt
 
 For listing available doit tasks, use::
 
@@ -71,6 +74,5 @@ TODO
 
 * other
 
-    * documentation
     * write complete setup.py
     * distribution

@@ -7,6 +7,7 @@ extensions = ['sphinx.ext.imgmath',
 
 project = 'Hatter'
 version = '0.0.1'
+copyright = '2017, Božo Kopić'
 master_doc = 'index'
 
 html_theme = 'sphinx_rtd_theme'

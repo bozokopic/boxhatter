@@ -23,20 +23,21 @@ def run(log, repo_path, commit='HEAD', archive_name='hatter_archive'):
         _git_archive(repo_path, commit, archive_path)
         log.info('loading project configuration')
         conf = _load_conf(archive_path)
-        log.info('starting virtual machine')
-        with contextlib.closing(_VM(conf['vm'])) as vm:
-            log.info('creating SSH connection')
-            with contextlib.closing(_SSH(conf['ssh'], vm.address)) as ssh:
-                log.info('transfering repository to virtual machine')
-                ssh.execute('rm -rf {} {}'.format(archive_file_name,
-                                                  archive_name))
-                ssh.upload(archive_path, archive_file_name)
-                ssh.execute('mkdir {}'.format(archive_name))
-                ssh.execute('tar xf {} -C {}'.format(archive_file_name,
-                                                     archive_name))
-                log.info('executing scripts')
-                for script in conf['scripts']:
-                    ssh.execute(script, archive_name, log)
+        for i in conf:
+            log.info('starting virtual machine')
+            with contextlib.closing(_VM(i['vm'])) as vm:
+                log.info('creating SSH connection')
+                with contextlib.closing(_SSH(i['ssh'], vm.address)) as ssh:
+                    log.info('transfering repository to virtual machine')
+                    ssh.execute('rm -rf {} {}'.format(archive_file_name,
+                                                      archive_name))
+                    ssh.upload(archive_path, archive_file_name)
+                    ssh.execute('mkdir {}'.format(archive_name))
+                    ssh.execute('tar xf {} -C {}'.format(archive_file_name,
+                                                         archive_name))
+                    log.info('executing scripts')
+                    for script in i['scripts']:
+                        ssh.execute(script, archive_name, log)
     t_end = time.monotonic()
     log.info('executor finished (duration: {}s)'.format(t_end - t_begin))
 

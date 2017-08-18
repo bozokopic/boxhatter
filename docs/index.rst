@@ -5,3 +5,6 @@ Content
     :includehidden:
 
     introduction
+    functionality
+    installation
+    schemas
