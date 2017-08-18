@@ -32,6 +32,12 @@ Development requirements
 Additional required python packages are listed in `requirements.pip.dev.txt`.
 
 
+Source
+------
+
+Source code available at `<https://github.com/bozokopic/hatter>`_.
+
+
 Documentation
 -------------
 
