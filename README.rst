@@ -68,7 +68,6 @@ TODO
 
 * web server - backend
 
-    * orchestrate automation executor
     * JSON Schema describing messages used in communication between backend and
       frontend
     * implement functionality provided by internal communication protocol

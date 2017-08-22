@@ -103,3 +103,45 @@ def monkeypatch_sqlite3():
         return val
 
     sqlite3.register_converter("timestamp", _sqlite_convert_timestamp)
+
+
+class RegisterCallbackHandle(collections.namedtuple(
+        'RegisterCallbackHandle', ['cancel'])):
+    """Handle used for canceling callback registration
+
+    Attributes:
+        cancel (Callable[[],None]): cancel registered callback
+
+    """
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.cancel()
+
+
+class CallbackRegistry:
+    """Callback registry"""
+
+    def __init__(self):
+        self._cbs = []
+
+    def register(self, cb):
+        """Register callback
+
+        Args:
+            cb (Callable): callback
+
+        Returns:
+            RegisterCallbackHandle
+
+        """
+        self.cbs.append(cb)
+        return RegisterCallbackHandle(lambda: self.cbs.remove(cb))
+
+    def notify(self, *args, **kwargs):
+        """Notify all registered callbacks"""
+
+        for cb in self._cbs:
+            cb(*args, **kwargs)

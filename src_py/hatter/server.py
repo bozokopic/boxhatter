@@ -60,7 +60,7 @@ class Client:
         pass
 
 
-WebhookRequest = util.namedtuple('WebhookRequest', 'url', 'commits')
+_WebhookRequest = util.namedtuple('_WebhookRequest', 'url', 'commits')
 
 
 def _parse_webhook_request(headers, data):
@@ -72,4 +72,4 @@ def _parse_webhook_request(headers, data):
         commits = [commit['id'] for commit in data['commits']]
     else:
         raise Exception('unsupported webhook event')
-    return WebhookRequest(url, commits)
+    return _WebhookRequest(url, commits)
