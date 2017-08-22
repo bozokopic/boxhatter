@@ -68,8 +68,6 @@ TODO
 
 * web server - backend
 
-    * JSON Schema describing messages used in communication between backend and
-      frontend
     * implement functionality provided by internal communication protocol
 
 * user interface - frontend
@@ -79,5 +77,6 @@ TODO
 
 * other
 
+    * test functionality
     * write complete setup.py
     * distribution
