@@ -66,10 +66,6 @@ creates `dist` folder containing Hatter distribution.
 TODO
 ----
 
-* web server - backend
-
-    * implement functionality provided by internal communication protocol
-
 * user interface - frontend
 
     * implement communication with backend
