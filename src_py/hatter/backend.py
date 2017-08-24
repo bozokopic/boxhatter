@@ -27,7 +27,8 @@ Job = util.namedtuple('Job',
 
 class Backend:
 
-    def __init__(self, db_path):
+    def __init__(self, db_path, repositories):
+        self._repositories = repositories
         self._next_job_id = 0
         self._active = None
         self._queue = []
@@ -40,8 +41,12 @@ class Backend:
         self._run_loop_future = asyncio.ensure_future(self._run_loop())
 
     @property
+    def repositories(self):
+        return self._repositories
+
+    @property
     def active(self):
-        self._active
+        return self._active
 
     @property
     def queue(self):

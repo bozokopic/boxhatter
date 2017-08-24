@@ -68,7 +68,6 @@ TODO
 
 * user interface - frontend
 
-    * implement communication with backend
     * create user interface
 
 * other

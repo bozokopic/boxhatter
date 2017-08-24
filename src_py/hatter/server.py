@@ -85,6 +85,7 @@ class _Client:
             with self._backend.register_queue_change_cb(self._on_queue_change):
                 with self._backend.register_log_change_cb(self._on_log_change):
                     try:
+                        self._send_repositories()
                         self._send_active_job()
                         self._send_job_queue()
                         self._send_log_entries()
@@ -126,6 +127,11 @@ class _Client:
         if log_entries != self._log_entries:
             self._log_entries = log_entries
             self._send_log_entries()
+
+    def _send_repositories(self):
+        self._ws.send_str(json.dumps({
+            'type': 'repositories',
+            'repositories': self._backend.repositories}))
 
     def _send_active_job(self):
         self._ws.send_str(json.dumps({

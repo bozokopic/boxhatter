@@ -53,7 +53,9 @@ definitions:
                       enum:
                           - active_job
                   job:
-                      "$ref": "hatter://message.yaml#/definitions/job"
+                      oneOf:
+                          - type: 'null'
+                          - "$ref": "hatter://message.yaml#/definitions/job"
             - title: Job queue
               type: object
               required:
@@ -71,6 +73,7 @@ definitions:
               type: object
               required:
                   - type
+                  - entries
               properties:
                   type:
                       enum:
@@ -79,6 +82,20 @@ definitions:
                       type: array
                       items:
                           "$ref": "hatter://message.yaml#/definitions/log_entry"
+            - title: repositories
+              type: object
+              required:
+                  - type
+                  - repositories
+              properties:
+                  type:
+                      enum:
+                          - repositories
+                  repositories:
+                      type: array
+                      items:
+                          type: string
+
     job:
         type: object
         required:

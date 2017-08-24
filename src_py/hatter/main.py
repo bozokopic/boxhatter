@@ -37,7 +37,8 @@ async def async_main(conf, web_path):
     backend = None
     web_server = None
     try:
-        backend = Backend(pathlib.Path(conf.get('db_path', 'hatter.db')))
+        backend = Backend(pathlib.Path(conf.get('db_path', 'hatter.db')),
+                          conf['repositories'])
         web_server = await create_web_server(
             backend, conf.get('host', '0.0.0.0'), conf.get('port', 24000),
             conf.get('webhook_path', '/webhook'), web_path)
