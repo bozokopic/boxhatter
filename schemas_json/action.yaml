@@ -1,0 +1,15 @@
+---
+"$schema": "http://json-schema.org/schema#"
+id: "hatter://action.yaml#"
+type: object
+required:
+    - image
+    - command
+properties:
+    image:
+        type: string
+        description: container image
+    command:
+        type: string
+        description: shell commands
+...

@@ -1,37 +1,70 @@
 ---
 "$schema": "http://json-schema.org/schema#"
 id: "hatter://server.yaml#"
-title: Server
-description: Server configuration
 type: object
 required:
-    - repositories
+    - repos
 properties:
-    log:
-        "$ref": "hatter://logging.yaml#"
-    host:
-        title: Host
-        description: Listening host name
-        type: string
-        default: "0.0.0.0"
-    port:
-        title: TCP port
-        description: Listening TCP port
-        type: integer
-        default: 24000
-    db_path:
-        title: DB path
-        description: SQLite database path
-        type: string
-        default: hatter.db
-    webhook_path:
-        title: Webhook path
-        type: string
-        default: '/webhook'
-    repositories:
-        title: Repositories
-        description: List of all repository urls
-        type: array
-        items:
-            type: string
+    env:
+        type: object
+        description: |
+            environment variables avaliable to all repositories
+            (keys represent variable names)
+        patternProperties:
+            ".+":
+                type: string
+                description: environment variable value
+    repos:
+        type: object
+        description: git repositories (keys represent repository names)
+        patternProperties:
+            ".+":
+                type: object
+                required:
+                    - url
+                properties:
+                    url:
+                        type: string
+                        description: remote repository location
+                    refs:
+                        type: array
+                        description: git references used for commit listing
+                        items:
+                            type: string
+                        default:
+                            - "refs/heads/*"
+                    actions:
+                        type: array
+                        decription: action file paths inside repository
+                        items:
+                            type: string
+                        default:
+                            - ".hatter.yaml"
+                    min_sync_delay:
+                        type:
+                            - number
+                            - "null"
+                        description: |
+                            minimum time delay (in seconds) between
+                            two consecutive remote ref synchronizations
+                            (null disables synchronization limiting)
+                        default: 5
+                    max_sync_delay:
+                        type:
+                            - number
+                            - "null"
+                        description: |
+                            maximum time delay (in seconds) between
+                            two consecutive remote ref synchronizations
+                            (null disables periodic synchronization)
+                        default: null
+                    env:
+                        type: object
+                        description: |
+                            environment variables avaliable to this repository
+                            (keys represent variable names)
+                        patternProperties:
+                            ".+":
+                                type: string
+                                description: environment variable value
 ...

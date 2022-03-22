@@ -1,7 +1,8 @@
-doit
-aiohttp
-libvirt-python
-pyyaml
-paramiko
-setuptools
-sphinx
+-r requirements.pip.runtime.txt
+
+build >= 0.7.0
+doit >= 0.34.2
+flake8 >= 4.0.1
+hat-doit ~= 0.8.1
+setuptools >= 60.10.0
+wheel >= 0.37.1

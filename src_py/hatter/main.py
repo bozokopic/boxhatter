@@ -1,74 +1,115 @@
-import sys
+from pathlib import Path
 import asyncio
-import argparse
-import pdb
-import yaml
+import contextlib
 import logging.config
-import atexit
-import pkg_resources
-import pathlib
+import sys
+import tempfile
+import typing
+import subprocess
 
-import hatter.json_validator
-from hatter import util
-from hatter.backend import Backend
-from hatter.server import create_web_server
+import appdirs
+import click
 
+from hat import aio
+from hat import json
 
-def main():
-    args = _create_parser().parse_args()
-
-    with open(args.conf, encoding='utf-8') as conf_file:
-        conf = yaml.safe_load(conf_file)
-    hatter.json_validator.validate(conf, 'hatter://server.yaml#')
-
-    if 'log' in conf:
-        logging.config.dictConfig(conf['log'])
-
-    if args.web_path:
-        web_path = args.web_path
-    else:
-        atexit.register(pkg_resources.cleanup_resources)
-        web_path = pkg_resources.resource_filename('hatter', 'web')
-
-    util.run_until_complete_without_interrupt(async_main(conf, web_path))
+from hatter import common
 
 
-async def async_main(conf, web_path):
-    backend = None
-    web_server = None
-    try:
-        backend = Backend(pathlib.Path(conf.get('db_path', 'hatter.db')),
-                          conf['repositories'])
-        web_server = await create_web_server(
-            backend, conf.get('host', '0.0.0.0'), conf.get('port', 24000),
-            conf.get('webhook_path', '/webhook'), web_path)
-        await asyncio.Future()
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:
-        pdb.set_trace()
-        raise
-    finally:
-        if web_server:
-            await web_server.async_close()
-        if backend:
-            await backend.async_close()
-        await asyncio.sleep(0.5)
+user_config_dir: Path = Path(appdirs.user_config_dir('hatter'))
+user_data_dir: Path = Path(appdirs.user_data_dir('hatter'))
+
+default_conf_path: Path = user_config_dir / 'server.yaml'
+default_db_path: Path = user_data_dir / 'hatter.db'
+
+ssh_key_path: typing.Optional[Path] = None
 
 
-def _create_parser():
-    parser = argparse.ArgumentParser(prog='hatter')
-    parser.add_argument(
-        '--web-path', default=None, metavar='path', dest='web_path',
-        help="web ui directory path")
+@click.group()
+@click.option('--log-level',
+              default='INFO',
+              type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO',
+                                 'DEBUG', 'NOTSET']),
+              help="log level")
+@click.option('--ssh-key', default=None, metavar='PATH', type=Path,
+              help="private key used for ssh authentication")
+def main(log_level: str,
+         ssh_key: typing.Optional[Path]):
+    global ssh_key_path
+    ssh_key_path = ssh_key
 
-    named_arguments = parser.add_argument_group('required named arguments')
-    named_arguments.add_argument(
-        '-c', '--conf', required=True, metavar='path', dest='conf',
-        help='configuration path')
+    logging.config.dictConfig({
+        'version': 1,
+        'formatters': {
+            'console': {
+                'format': "[%(asctime)s %(levelname)s %(name)s] %(message)s"}},
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'console',
+                'level': log_level}},
+        'root': {
+            'level': log_level,
+            'handlers': ['console']},
+        'disable_existing_loggers': False})
 
-    return parser
+
+@main.command()
+@click.argument('url', required=True)
+@click.argument('branch', required=False, default='master')
+@click.argument('action', required=False, default='.hatter.yaml')
+def execute(url: str,
+            branch: str,
+            action: str):
+    with tempfile.TemporaryDirectory() as repo_dir:
+        repo_dir = Path(repo_dir)
+
+        subprocess.run(['git', 'clone', '-q', '--depth', '1',
+                        '-b', branch, url, str(repo_dir)],
+                       check=True)
+
+        conf = json.decode_file(repo_dir / '.hatter.yaml')
+        common.json_schema_repo.validate('hatter://action.yaml#', conf)
+
+        image = conf['image']
+        command = conf['command']
+        subprocess.run(['podman', 'run', '-i', '--rm',
+                        '-v', f'{repo_dir}:/hatter',
+                        image, '/bin/sh'],
+                       input=f'set -e\ncd /hatter\n{command}\n',
+                       encoding='utf-8',
+                       check=True)
+
+
+@main.command()
+@click.option('--host', default='0.0.0.0',
+              help="listening host name (default 0.0.0.0)")
+@click.option('--port', default=24000, type=int,
+              help="listening TCP port (default 24000)")
+@click.option('--conf', default=default_conf_path, metavar='PATH', type=Path,
+              help="configuration defined by hatter://server.yaml# "
+                   "(default $XDG_CONFIG_HOME/hatter/server.yaml)")
+@click.option('--db', default=default_db_path, metavar='PATH', type=Path,
+              help="sqlite database path "
+                   "(default $XDG_CONFIG_HOME/hatter/hatter.db")
+def server(host: str,
+           port: int,
+           conf: Path,
+           db: Path):
+    conf = json.decode_file(conf)
+    common.json_schema_repo.validate('hatter://server.yaml#', conf)
+
+    with contextlib.suppress(asyncio.CancelledError):
+        aio.run_asyncio(async_server(host, port, conf, db))
+
+
+async def async_server(host: str,
+                       port: int,
+                       conf: json.Data,
+                       db_path: Path):
+    pass
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.argv[0] = 'hatter'
+    main()

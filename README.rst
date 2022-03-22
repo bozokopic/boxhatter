@@ -1,47 +1,44 @@
 Hatter
 ======
 
-Hatter is continuous integration server. It provides isolated execution
-environments, for running automated actions, as virtual machines managed by
-libvirt.
+Hatter is continuous integration server/executor. It provides isolated
+execution environments, for running automated actions, as containers managed
+by podman.
 
 Key features:
 
     * automated projects based on git repositories
-    * virtual machines as execution runners
-    * virtual machine snapshots for consistent execution environments
+    * containers as execution runners
     * per project configuration as YAML file inside project's repository
     * web based control and monitoring interface
+    * webhook/periodic execution triggering
+    * CLI executor
 
 
 Runtime requirements
 --------------------
 
-* python >=3.6
-* libvirt
+* python >=3.8
+* podman
 
-Additional required python packages are listed in `requirements.pip.run.txt`.
-
-
-Development requirements
-------------------------
-
-* nodejs >=7
-* yarn
-
-Additional required python packages are listed in `requirements.pip.dev.txt`.
+Additional required python packages are listed in
+`requirements.pip.runtime.txt`.
 
 
-Source
-------
-
-Source code available at `<https://github.com/bozokopic/hatter>`_.
+Running
+-------
 
 
-Documentation
+Server
+''''''
+
+
+CLI executor
+''''''''''''
+
+
+Configuration
 -------------
-
-Online documentation available at `<http://hatter.readthedocs.io>`_.
 
 
 Build
@@ -60,18 +57,24 @@ Default task::
 
     $ doit
 
-creates `dist` folder containing Hatter distribution.
+creates `build` folder containing Hatter distribution.
 
 
-TODO
-----
+License
+-------
 
-* user interface - frontend
+hatter - continuous integration server/executor
+Copyright (C) 2017-2022  Bozo Kopic
 
-    * create user interface
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-* other
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    * test functionality
-    * write complete setup.py
-    * distribution
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
