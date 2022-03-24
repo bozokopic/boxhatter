@@ -2,18 +2,20 @@ from pathlib import Path
 import asyncio
 import contextlib
 import logging.config
+import subprocess
 import sys
 import tempfile
 import typing
-import subprocess
-
-import appdirs
-import click
 
 from hat import aio
 from hat import json
+import appdirs
+import click
 
 from hatter import common
+import hatter.backend
+import hatter.server
+import hatter.ui
 
 
 user_config_dir: Path = Path(appdirs.user_config_dir('hatter'))
@@ -56,19 +58,36 @@ def main(log_level: str,
 
 @main.command()
 @click.argument('url', required=True)
-@click.argument('branch', required=False, default='master')
+@click.argument('commit', required=False, default='master')
 @click.argument('action', required=False, default='.hatter.yaml')
 def execute(url: str,
-            branch: str,
+            commit: str,
             action: str):
+    with contextlib.suppress(Exception):
+        path = Path(url)
+        if path.exists():
+            url = str(path.resolve())
+
     with tempfile.TemporaryDirectory() as repo_dir:
         repo_dir = Path(repo_dir)
 
-        subprocess.run(['git', 'clone', '-q', '--depth', '1',
-                        '-b', branch, url, str(repo_dir)],
+        subprocess.run(['git', 'init', '-q'],
+                       cwd=str(repo_dir),
                        check=True)
 
-        conf = json.decode_file(repo_dir / '.hatter.yaml')
+        subprocess.run(['git', 'remote', 'add', 'origin', url],
+                       cwd=str(repo_dir),
+                       check=True)
+
+        subprocess.run(['git', 'fetch', '-q', '--depth=1', 'origin', commit],
+                       cwd=str(repo_dir),
+                       check=True)
+
+        subprocess.run(['git', 'checkout', '-q', commit],
+                       cwd=str(repo_dir),
+                       check=True)
+
+        conf = json.decode_file(repo_dir / action)
         common.json_schema_repo.validate('hatter://action.yaml#', conf)
 
         image = conf['image']
@@ -107,7 +126,28 @@ async def async_server(host: str,
                        port: int,
                        conf: json.Data,
                        db_path: Path):
-    pass
+    async_group = aio.Group()
+
+    try:
+        backend = await hatter.backend.create(db_path)
+        _bind_resource(async_group, backend)
+
+        server = await hatter.server.create(conf, backend)
+        _bind_resource(async_group, server)
+
+        ui = await hatter.ui.create(host, port, server)
+        _bind_resource(async_group, ui)
+
+        await async_group.wait_closing()
+
+    finally:
+        await aio.uncancellable(async_group.async_close())
+
+
+def _bind_resource(async_group, resource):
+    async_group.spawn(aio.call_on_cancel, resource.async_close)
+    async_group.spawn(aio.call_on_done, resource.wait_closing(),
+                      async_group.close)
 
 
 if __name__ == '__main__':

@@ -19,10 +19,8 @@ Runtime requirements
 --------------------
 
 * python >=3.8
+* git
 * podman
-
-Additional required python packages are listed in
-`requirements.pip.runtime.txt`.
 
 
 Running
