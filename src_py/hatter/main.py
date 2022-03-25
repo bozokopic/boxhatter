@@ -58,10 +58,10 @@ def main(log_level: str,
 
 @main.command()
 @click.argument('url', required=True)
-@click.argument('commit', required=False, default='master')
+@click.argument('ref', required=False, default='HEAD')
 @click.argument('action', required=False, default='.hatter.yaml')
 def execute(url: str,
-            commit: str,
+            ref: str,
             action: str):
     with contextlib.suppress(Exception):
         path = Path(url)
@@ -79,11 +79,11 @@ def execute(url: str,
                        cwd=str(repo_dir),
                        check=True)
 
-        subprocess.run(['git', 'fetch', '-q', '--depth=1', 'origin', commit],
+        subprocess.run(['git', 'fetch', '-q', '--depth=1', 'origin', ref],
                        cwd=str(repo_dir),
                        check=True)
 
-        subprocess.run(['git', 'checkout', '-q', commit],
+        subprocess.run(['git', 'checkout', '-q', 'FETCH_HEAD'],
                        cwd=str(repo_dir),
                        check=True)
 
@@ -134,6 +134,9 @@ async def async_server(host: str,
 
         server = await hatter.server.create(conf, backend)
         _bind_resource(async_group, server)
+
+        for repo in server.get_repos():
+            server.sync_repo(repo)
 
         ui = await hatter.ui.create(host, port, server)
         _bind_resource(async_group, ui)

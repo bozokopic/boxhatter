@@ -33,13 +33,10 @@ properties:
                             type: string
                         default:
                             - "refs/heads/*"
-                    actions:
-                        type: array
-                        decription: action file paths inside repository
-                        items:
-                            type: string
-                        default:
-                            - ".hatter.yaml"
+                    action:
+                        type: string
+                        decription: action file path inside repository
+                        default: ".hatter.yaml"
                     min_sync_delay:
                         type:
                             - number
