@@ -27,6 +27,6 @@ class Status(enum.Enum):
 class Commit(typing.NamedTuple):
     repo: str
     hash: str
-    change: float
+    change: int
     status: Status
     output: str

@@ -1,5 +1,7 @@
 import asyncio
 import multiprocessing
+import subprocess
+import sys
 import time
 import typing
 
@@ -36,7 +38,7 @@ async def create(conf: json.Data,
                                             order=common.Order.ASC)
 
         for commit in commits:
-            commit = commit._replace(change=time.time(),
+            commit = commit._replace(change=int(time.time()),
                                      status=common.Status.PENDING,
                                      output='')
             await backend.update_commit(commit)
@@ -83,7 +85,7 @@ class Server(aio.Resource):
             if not commit:
                 commit = common.Commit(repo=repo,
                                        hash=commit_hash,
-                                       change=time.time(),
+                                       change=int(time.time()),
                                        status=common.Status.PENDING,
                                        output='')
                 await self._backend.update_commit(commit)
@@ -105,7 +107,7 @@ class Server(aio.Resource):
             if not commit:
                 raise ValueError(f'invalid commit {commit_hash}')
 
-            commit = commit._replace(change=time.time(),
+            commit = commit._replace(change=int(time.time()),
                                      status=common.Status.PENDING,
                                      output='')
             await self._backend.update_commit(commit)
@@ -128,4 +130,52 @@ class Server(aio.Resource):
         pass
 
     async def _run_loop(self):
-        pass
+        try:
+            while True:
+                commit = await self._run_queue.get()
+                repo_conf = self._conf['repos'][commit.repo]
+                url = repo_conf['url']
+                ref = commit.hash
+                action = repo_conf.get('action', '.hatter.yaml')
+
+                commit = commit._replace(change=int(time.time()),
+                                         status=common.Status.RUNNING,
+                                         output='')
+                await self._backend.update_commit(commit)
+
+                try:
+                    output = await _execute(url, ref, action)
+                    status = common.Status.SUCCESS
+
+                except Exception as e:
+                    output = str(e)
+                    status = common.Status.FAILURE
+
+                commit = commit._replace(change=int(time.time()),
+                                         status=status,
+                                         output=output)
+                await self._backend.update_commit(commit)
+
+        finally:
+            self.close()
+
+
+async def _execute(url, ref, action):
+    p = await asyncio.create_subprocess_exec(
+        sys.executable, '-m', 'hatter', 'execute', url, ref, action,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+
+    try:
+        output, _ = await p.communicate()
+        output = str(output, encoding='utf-8', errors='ignore')
+
+        if p.returncode:
+            raise Exception(output)
+
+        return output
+
+    finally:
+        if p.returncode is None:
+            p.terminate()
