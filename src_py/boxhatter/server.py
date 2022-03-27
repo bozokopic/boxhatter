@@ -169,7 +169,12 @@ class Server(aio.Resource):
 
 
 async def _execute(action, env, url, ref):
-    cmd = [sys.executable, '-m', 'boxhatter', 'execute',
+    cmd = [sys.executable, '-m', 'boxhatter',
+           '--log-level', common.settings.log_level,
+           *(['--ssh-key', common.settings.ssh_key]
+             if common.settings.ssh_key else []),
+           '--engine', common.settings.engine,
+           'execute',
            '--action', action,
            *itertools.chain.from_iterable(('--env', i) for i in env),
            url, ref]

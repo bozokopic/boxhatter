@@ -30,3 +30,14 @@ class Commit(typing.NamedTuple):
     change: int
     status: Status
     output: str
+
+
+class Settings(typing.NamedTuple):
+    log_level: str
+    ssh_key: typing.Optional[Path]
+    engine: str
+
+
+settings = Settings(log_level='INFO',
+                    ssh_key=None,
+                    engine='podman')

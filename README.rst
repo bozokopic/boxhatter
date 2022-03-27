@@ -3,7 +3,7 @@ Box Hatter
 
 Box Hatter is continuous integration server/executor. It provides isolated
 execution environments, for running automated actions, as containers managed
-by podman.
+by podman or docker.
 
 Key features:
 
@@ -20,7 +20,7 @@ Runtime requirements
 
 * python >=3.8
 * git
-* podman
+* podman or docker
 
 
 Install

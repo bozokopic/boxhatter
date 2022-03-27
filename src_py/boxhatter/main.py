@@ -25,21 +25,26 @@ user_data_dir: Path = Path(appdirs.user_data_dir('boxhatter'))
 default_conf_path: Path = user_config_dir / 'server.yaml'
 default_db_path: Path = user_data_dir / 'boxhatter.db'
 
-ssh_key_path: typing.Optional[Path] = None
-
 
 @click.group()
 @click.option('--log-level',
-              default='INFO',
+              default=common.settings.log_level,
               type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                  'DEBUG', 'NOTSET']),
-              help="log level")
-@click.option('--ssh-key', default=None, metavar='PATH', type=Path,
+              help="log level (default INFO)")
+@click.option('--ssh-key', metavar='PATH', type=Path,
+              default=common.settings.ssh_key,
               help="private key used for ssh authentication")
+@click.option('--engine',
+              default=common.settings.engine,
+              help="container engine (default podman)")
 def main(log_level: str,
-         ssh_key: typing.Optional[Path]):
-    global ssh_key_path
-    ssh_key_path = ssh_key
+         ssh_key: typing.Optional[Path],
+         engine: str):
+    common.settings = common.Settings(
+        log_level=log_level,
+        ssh_key=(ssh_key.resolve() if ssh_key else None),
+        engine=engine)
 
     logging.config.dictConfig({
         'version': 1,
@@ -97,11 +102,12 @@ def execute(action: str,
 
         image = conf['image']
         command = conf['command']
-        subprocess.run(['podman', 'run', '-i', '--rm',
-                        '-v', f'{repo_dir}:/boxhatter',
-                        *itertools.chain.from_iterable(('--env', i)
-                                                       for i in env),
-                        image, '/bin/sh'],
+
+        cmd = [common.settings.engine, 'run', '-i', '--rm',
+               '-v', f'{repo_dir}:/boxhatter',
+               *itertools.chain.from_iterable(('--env', i) for i in env),
+               image, '/bin/sh']
+        subprocess.run(cmd,
                        input=f'set -e\ncd /boxhatter\n{command}\n',
                        encoding='utf-8',
                        check=True)
