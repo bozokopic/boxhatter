@@ -1,6 +1,7 @@
 from pathlib import Path
 import asyncio
 import contextlib
+import itertools
 import logging.config
 import subprocess
 import sys
@@ -57,12 +58,16 @@ def main(log_level: str,
 
 
 @main.command()
+@click.option('--action', default='.hatter.yaml',
+              help="action file path inside repository")
+@click.option('--env', multiple=True,
+              help="environment variables")
 @click.argument('url', required=True)
 @click.argument('ref', required=False, default='HEAD')
-@click.argument('action', required=False, default='.hatter.yaml')
-def execute(url: str,
-            ref: str,
-            action: str):
+def execute(action: str,
+            env: typing.Tuple[str],
+            url: str,
+            ref: str):
     with contextlib.suppress(Exception):
         path = Path(url)
         if path.exists():
@@ -94,6 +99,8 @@ def execute(url: str,
         command = conf['command']
         subprocess.run(['podman', 'run', '-i', '--rm',
                         '-v', f'{repo_dir}:/hatter',
+                        *itertools.chain.from_iterable(('--env', i)
+                                                       for i in env),
                         image, '/bin/sh'],
                        input=f'set -e\ncd /hatter\n{command}\n',
                        encoding='utf-8',
@@ -134,9 +141,6 @@ async def async_server(host: str,
 
         server = await hatter.server.create(conf, backend)
         _bind_resource(async_group, server)
-
-        for repo in server.repos:
-            server.sync_repo(repo)
 
         ui = await hatter.ui.create(host, port, server)
         _bind_resource(async_group, ui)
