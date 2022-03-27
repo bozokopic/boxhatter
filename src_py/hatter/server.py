@@ -3,6 +3,7 @@ import collections
 import contextlib
 import itertools
 import multiprocessing
+import os
 import subprocess
 import sys
 import time
@@ -101,7 +102,7 @@ class Server(aio.Resource):
         try:
             url = repo_conf['url']
             refs = repo_conf.get('refs', ['refs/heads/*'])
-            min_sync_delay = repo_conf.get('min_sync_delay') or 0
+            min_sync_delay = repo_conf.get('min_sync_delay', 60) or 0
             max_sync_delay = repo_conf.get('max_sync_delay')
             last_sync = time.monotonic() - min_sync_delay
 
@@ -173,11 +174,11 @@ async def _execute(action, env, url, ref):
            *itertools.chain.from_iterable(('--env', i) for i in env),
            url, ref]
 
-    p = await asyncio.create_subprocess_exec(cmd,
+    p = await asyncio.create_subprocess_exec(*cmd,
                                              stdin=subprocess.DEVNULL,
                                              stdout=subprocess.PIPE,
                                              stderr=subprocess.STDOUT,
-                                             env=env)
+                                             env={**os.environ, **env})
 
     try:
         output, _ = await p.communicate()
@@ -196,7 +197,7 @@ async def _execute(action, env, url, ref):
 async def _git_ls_remote(url, refs):
     cmd = ['git', 'ls-remote', url, *refs]
 
-    p = await asyncio.create_subprocess_exec(cmd,
+    p = await asyncio.create_subprocess_exec(*cmd,
                                              stdin=subprocess.DEVNULL,
                                              stdout=subprocess.PIPE,
                                              stderr=subprocess.PIPE)

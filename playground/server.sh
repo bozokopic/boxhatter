@@ -4,5 +4,5 @@
 
 exec $PYTHON -m hatter server \
     --conf $RUN_PATH/server.yaml \
-    --db $DATA_PATH/hatter.db
+    --db $DATA_PATH/hatter.db \
     "$@"

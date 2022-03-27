@@ -10,7 +10,7 @@ Key features:
     * automated projects based on git repositories
     * containers as execution runners
     * per project configuration as YAML file inside project's repository
-    * web based control and monitoring interface
+    * web based control and monitoring interface (without JavaScript)
     * webhook/periodic execution triggering
     * CLI executor
 
@@ -23,20 +23,71 @@ Runtime requirements
 * podman
 
 
+Install
+-------
+
+::
+
+    $ pip install hatter
+
+
 Running
 -------
 
+Hatter enables execution of actions described by simple YAML files which
+contain container image name and Posix shell execution script. Actions files
+are stored as part of git repositories (default name of action file is
+`.hatter.yaml`, stored in root of git working tree).
 
-Server
-''''''
+These actions can be executed with::
+
+    $ hatter execute <path>
+
+where ``<path>`` is path to git repository containing action definition.
+Referenced git repository can be local or remote.
+
+Additionally, hatter can be run as daemon providing web server interface::
+
+    $ hatter server
+
+When run as server, hatter periodically lists configured git repository
+references, and schedules action executions if new commits are available.
+New commit checking can also be triggered by webhooks available at listening
+`/repo/<repo_name>/webhook` URL path (``<repo_name>`` is configured repository
+name).
+
+Hatter server provides basic web GUI which can be used for monitoring
+action executions and scheduling new executions based on user provided
+git reference.
+
+Action and server configurations are defined and documented by JSON schemas
+`schemas_json/action.yaml`_ and `schemas_json/server.yaml`_.
+
+For additional options, see::
+
+    $ hatter --help
 
 
-CLI executor
-''''''''''''
+Configuration example
+---------------------
 
+* `.hatter.yaml`
 
-Configuration
--------------
+    ::
+
+        image: alpine
+        command: |
+            echo "hello $WHO"
+
+* `server.yaml`
+
+    ::
+
+        repos:
+            example:
+                url: path/to/example/repository
+                env:
+                    WHO: world
 
 
 Build

@@ -45,7 +45,7 @@ properties:
                             minimum time delay (in seconds) between
                             two consecutive remote ref synchronizations
                             (null disables synchronization limiting)
-                        default: 5
+                        default: 60
                     max_sync_delay:
                         type:
                             - number
