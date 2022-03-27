@@ -9,20 +9,27 @@ from hat.doit.py import (build_wheel,
 __all__ = ['task_clean_all',
            'task_wheel',
            'task_check',
-           'task_json_schema_repo']
+           'task_json_schema_repo',
+           'task_scss']
 
 
 build_dir = Path('build')
 src_py_dir = Path('src_py')
+src_scss_dir = Path('src_scss')
 schemas_json_dir = Path('schemas_json')
 
+ui_dir = src_py_dir / 'hatter/ui'
+
 json_schema_repo_path = src_py_dir / 'hatter/json_schema_repo.json'
+main_scss_path = src_scss_dir / 'main.scss'
+main_css_path = ui_dir / 'main.css'
 
 
 def task_clean_all():
     """Clean all"""
     return {'actions': [(common.rm_rf, [build_dir,
-                                        json_schema_repo_path])]}
+                                        json_schema_repo_path,
+                                        main_css_path])]}
 
 
 def task_wheel():
@@ -40,7 +47,8 @@ def task_wheel():
             console_scripts=['hatter = hatter.main:main'])
 
     return {'actions': [build],
-            'task_dep': ['json_schema_repo']}
+            'task_dep': ['json_schema_repo',
+                         'scss']}
 
 
 def task_check():
@@ -60,3 +68,11 @@ def task_json_schema_repo():
     return {'actions': [generate],
             'file_dep': src_paths,
             'targets': [json_schema_repo_path]}
+
+
+def task_scss():
+    """Build SCSS"""
+    return {'actions': [(common.mkdir_p, [main_css_path.parent]),
+                        (f'sass --no-source-map '
+                         f'{main_scss_path} {main_css_path}')],
+            'targets': [main_css_path]}

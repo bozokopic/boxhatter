@@ -1,4 +1,5 @@
 /.doit.*
 /build
 /src_py/hatter/json_schema_repo.json
+/src_py/hatter/ui/main.css
 __pycache__

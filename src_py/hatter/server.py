@@ -19,6 +19,7 @@ async def create(conf: json.Data,
     server._conf = conf
     server._backend = backend
     server._async_group = aio.Group()
+    server._repos = set(conf['repos'].keys())
     server._lock = asyncio.Lock()
     server._run_queue = aio.Queue()
     server._sync_events = {}
@@ -57,8 +58,9 @@ class Server(aio.Resource):
     def async_group(self):
         return self._async_group
 
-    def get_repos(self) -> typing.Iterable[str]:
-        return self._conf['repos'].keys()
+    @property
+    def repos(self) -> typing.Set[str]:
+        return self._repos
 
     async def get_commits(self,
                           repo: typing.Optional[str],

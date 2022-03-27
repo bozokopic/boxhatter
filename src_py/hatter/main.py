@@ -135,7 +135,7 @@ async def async_server(host: str,
         server = await hatter.server.create(conf, backend)
         _bind_resource(async_group, server)
 
-        for repo in server.get_repos():
+        for repo in server.repos:
             server.sync_repo(repo)
 
         ui = await hatter.ui.create(host, port, server)

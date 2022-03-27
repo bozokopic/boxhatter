@@ -23,15 +23,17 @@ async def create(host: str,
     get_routes = (
         aiohttp.web.get(path, handler) for path, handler in (
             ('/', ui._get_root_handler),
-            ('/main.css', ui._get_style_handler),
             ('/repo/{repo}', ui._get_repo_handler),
             ('/repo/{repo}/commit/{commit}', ui._get_commit_handler)))
     post_routes = (
         aiohttp.web.post(path, handler) for path, handler in (
             ('/repo/{repo}/webhook', ui._post_webhook_handler),
+            ('/repo/{repo}/add', ui._post_add_handler),
             ('/repo/{repo}/commit/{commit}/rerun', ui._post_rerun_handler),
             ('/repo/{repo}/commit/{commit}/remove', ui._post_remove_handler)))
-    app.add_routes([*get_routes, *post_routes])
+    app.add_routes([*get_routes,
+                    *post_routes,
+                    aiohttp.web.static('/', static_dir)])
 
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
@@ -59,45 +61,69 @@ class UI(aio.Resource):
         return self._async_group
 
     async def _get_root_handler(self, request):
-        repos = self._server.get_repos()
         commits = await self._server.get_commits(None)
-        body = (f'{_generate_repos(repos)}\n'
+
+        body = (f'{_generate_repos(self._server.repos)}\n'
                 f'{_generate_commits(commits)}')
         return _create_html_response('hatter', body)
 
-    async def _get_style_handler(self, request):
-        return aiohttp.web.Response(content_type='text/css',
-                                    text=_main_css)
-
     async def _get_repo_handler(self, request):
-        repo = request.match_info['repo']
+        repo = _parse_repo(request, self._server.repos)
+
         commits = await self._server.get_commits(repo)
-        body = _generate_commits(commits)
+
+        body = (f'{_generate_commits(commits)}\n'
+                f'{_generate_add(repo)}')
         return _create_html_response(f'hatter - {repo}', body)
 
     async def _get_commit_handler(self, request):
-        repo = request.match_info['repo']
+        repo = _parse_repo(request, self._server.repos)
+
         commit_hash = request.match_info['commit']
         commit = await self._server.get_commit(repo, commit_hash)
+
         body = _generate_commit(commit)
         return _create_html_response(f'hatter - {repo}/{commit_hash}', body)
 
     async def _post_webhook_handler(self, request):
-        repo = request.match_info['repo']
+        repo = _parse_repo(request, self._server.repos)
+
         self._server.sync_repo(repo)
+
         return aiohttp.web.Response()
 
+    async def _post_add_handler(self, request):
+        repo = _parse_repo(request, self._server.repos)
+
+        body = await request.post()
+        commit_hash = body['hash']
+        if not commit_hash:
+            raise aiohttp.web.HTTPBadRequest()
+
+        raise aiohttp.web.HTTPFound(f'/repo/{repo}/commit/{commit_hash}')
+
     async def _post_rerun_handler(self, request):
-        repo = request.match_info['repo']
+        repo = _parse_repo(request, self._server.repos)
+
         commit_hash = request.match_info['commit']
         await self._server.rerun_commit(repo, commit_hash)
+
         raise aiohttp.web.HTTPFound(f'/repo/{repo}/commit/{commit_hash}')
 
     async def _post_remove_handler(self, request):
-        repo = request.match_info['repo']
+        repo = _parse_repo(request, self._server.repos)
+
         commit_hash = request.match_info['commit']
         await self._server.remove_commit(repo, commit_hash)
+
         raise aiohttp.web.HTTPFound(f'/repo/{repo}')
+
+
+def _parse_repo(request, repos):
+    repo = request.match_info['repo']
+    if repo not in repos:
+        raise aiohttp.web.HTTPBadRequest()
+    return repo
 
 
 def _create_html_response(title, body):
@@ -111,6 +137,7 @@ def _generate_repos(repos):
     items = '\n'.join(f'<li><a href="/repo/{repo}">{repo}</a></li>'
                       for repo in repos)
     return (f'<div class="repos">\n'
+            f'<h2>Repositories</h2>\n'
             f'<ul>\n'
             f'{items}\n'
             f'</ul>\n'
@@ -135,6 +162,7 @@ def _generate_commits(commits):
         for commit in commits)
 
     return (f'<div class="commits">\n'
+            f'<h2>Commits</h2>\n'
             f'<table>\n'
             f'<thead>\n'
             f'{thead}\n'
@@ -165,6 +193,15 @@ def _generate_commit(commit):
             f'</div>')
 
 
+def _generate_add(repo):
+    return (f'<div class="add">\n'
+            f'<form method="post" action="/repo/{repo}/add">\n'
+            f'<input type="text" name="hash">\n'
+            f'<input type="submit" value="Add commit">\n'
+            f'</form>\n'
+            f'</div>')
+
+
 def _format_time(t):
     return datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -173,6 +210,7 @@ _html_template = r"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <link href="/main.css" rel="stylesheet">
 </head>
@@ -180,18 +218,4 @@ _html_template = r"""<!DOCTYPE html>
 {body}
 </body>
 </html>
-"""
-
-_main_css = r"""
-.repos {
-
-}
-
-.commits {
-
-}
-
-.commit {
-
-}
 """
