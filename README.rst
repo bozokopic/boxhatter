@@ -61,7 +61,7 @@ action executions and scheduling new executions based on user provided
 git reference.
 
 Action and server configurations are defined and documented by JSON schemas
-`schemas_json/action.yaml`_ and `schemas_json/server.yaml`_.
+`<schemas_json/action.yaml>`_ and `<schemas_json/server.yaml>`_.
 
 For additional options, see::
 
