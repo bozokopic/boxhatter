@@ -113,6 +113,7 @@ License
 -------
 
 boxhatter - continuous integration server/executor
+
 Copyright (C) 2017-2022  Bozo Kopic
 
 This program is free software: you can redistribute it and/or modify
