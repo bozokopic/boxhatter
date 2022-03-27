@@ -2,5 +2,5 @@
 
 . $(dirname -- "$0")/env.sh
 
-exec $PYTHON -m hatter execute \
+exec $PYTHON -m boxhatter execute \
     "$@"

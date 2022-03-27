@@ -1,6 +1,6 @@
 ---
 "$schema": "http://json-schema.org/schema#"
-id: "hatter://server.yaml#"
+id: "boxhatter://server.yaml#"
 type: object
 required:
     - repos
@@ -36,7 +36,7 @@ properties:
                     action:
                         type: string
                         decription: action file path inside repository
-                        default: ".hatter.yaml"
+                        default: ".boxhatter.yaml"
                     min_sync_delay:
                         type:
                             - number

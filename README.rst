@@ -1,7 +1,7 @@
-Hatter
-======
+Box Hatter
+==========
 
-Hatter is continuous integration server/executor. It provides isolated
+Box Hatter is continuous integration server/executor. It provides isolated
 execution environments, for running automated actions, as containers managed
 by podman.
 
@@ -28,35 +28,35 @@ Install
 
 ::
 
-    $ pip install hatter
+    $ pip install boxhatter
 
 
 Running
 -------
 
-Hatter enables execution of actions described by simple YAML files which
+Box Hatter enables execution of actions described by simple YAML files which
 contain container image name and Posix shell execution script. Actions files
 are stored as part of git repositories (default name of action file is
-`.hatter.yaml`, stored in root of git working tree).
+`.boxhatter.yaml`, stored in root of git working tree).
 
 These actions can be executed with::
 
-    $ hatter execute <path>
+    $ boxhatter execute <path>
 
 where ``<path>`` is path to git repository containing action definition.
 Referenced git repository can be local or remote.
 
-Additionally, hatter can be run as daemon providing web server interface::
+Additionally, Box Hatter can be run as daemon providing web server interface::
 
-    $ hatter server
+    $ boxhatter server
 
-When run as server, hatter periodically lists configured git repository
+When run as server, Box Hatter periodically lists configured git repository
 references, and schedules action executions if new commits are available.
 New commit checking can also be triggered by webhooks available at listening
 `/repo/<repo_name>/webhook` URL path (``<repo_name>`` is configured repository
 name).
 
-Hatter server provides basic web GUI which can be used for monitoring
+Box Hatter server provides basic web GUI which can be used for monitoring
 action executions and scheduling new executions based on user provided
 git reference.
 
@@ -65,13 +65,13 @@ Action and server configurations are defined and documented by JSON schemas
 
 For additional options, see::
 
-    $ hatter --help
+    $ boxhatter --help
 
 
 Configuration example
 ---------------------
 
-* `.hatter.yaml`
+* `.boxhatter.yaml`
 
     ::
 
@@ -93,7 +93,7 @@ Configuration example
 Build
 -----
 
-Build tool used for Hatter is pydoit (`<http://pydoit.org>`_). It can be
+Build tool used for Box Hatter is pydoit (`<http://pydoit.org>`_). It can be
 installed together with other python dependencies by running::
 
     $ pip install -r requirements.pip.dev.txt
@@ -106,13 +106,13 @@ Default task::
 
     $ doit
 
-creates `build` folder containing Hatter distribution.
+creates `build` folder containing Box Hatter distribution.
 
 
 License
 -------
 
-hatter - continuous integration server/executor
+boxhatter - continuous integration server/executor
 Copyright (C) 2017-2022  Bozo Kopic
 
 This program is free software: you can redistribute it and/or modify

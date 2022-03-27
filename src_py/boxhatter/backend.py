@@ -4,7 +4,7 @@ import typing
 
 from hat import aio
 
-from hatter import common
+from boxhatter import common
 
 
 async def create(db_path: Path

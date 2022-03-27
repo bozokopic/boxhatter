@@ -12,12 +12,12 @@ import typing
 from hat import aio
 from hat import json
 
-from hatter import common
-import hatter.backend
+from boxhatter import common
+import boxhatter.backend
 
 
 async def create(conf: json.Data,
-                 backend: hatter.backend.Backend
+                 backend: boxhatter.backend.Backend
                  ) -> 'Server':
     server = Server()
     server._conf = conf
@@ -137,7 +137,7 @@ class Server(aio.Resource):
             while True:
                 commit = await self._run_queue.get()
                 repo_conf = self._conf['repos'][commit.repo]
-                action = repo_conf.get('action', '.hatter.yaml')
+                action = repo_conf.get('action', '.boxhatter.yaml')
                 env = {**self._conf.get('env', {}),
                        **repo_conf.get('env', {})}
                 url = repo_conf['url']
@@ -169,7 +169,7 @@ class Server(aio.Resource):
 
 
 async def _execute(action, env, url, ref):
-    cmd = [sys.executable, '-m', 'hatter', 'execute',
+    cmd = [sys.executable, '-m', 'boxhatter', 'execute',
            '--action', action,
            *itertools.chain.from_iterable(('--env', i) for i in env),
            url, ref]

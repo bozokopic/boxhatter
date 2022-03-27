@@ -1,8 +1,8 @@
 import sys
 
-from hatter.main import main
+from boxhatter.main import main
 
 
 if __name__ == '__main__':
-    sys.argv[0] = 'hatter'
+    sys.argv[0] = 'boxhatter'
     sys.exit(main())

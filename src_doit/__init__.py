@@ -18,9 +18,9 @@ src_py_dir = Path('src_py')
 src_scss_dir = Path('src_scss')
 schemas_json_dir = Path('schemas_json')
 
-ui_dir = src_py_dir / 'hatter/ui'
+ui_dir = src_py_dir / 'boxhatter/ui'
 
-json_schema_repo_path = src_py_dir / 'hatter/json_schema_repo.json'
+json_schema_repo_path = src_py_dir / 'boxhatter/json_schema_repo.json'
 main_scss_path = src_scss_dir / 'main.scss'
 main_css_path = ui_dir / 'main.css'
 
@@ -39,12 +39,12 @@ def task_wheel():
         build_wheel(
             src_dir=src_py_dir,
             dst_dir=build_dir,
-            name='hatter',
+            name='boxhatter',
             description='Continuous integration server/executor',
-            url='https://github.com/bozokopic/hatter',
+            url='https://github.com/bozokopic/boxhatter',
             license=common.License.GPL3,
-            packages=['hatter'],
-            console_scripts=['hatter = hatter.main:main'])
+            packages=['boxhatter'],
+            console_scripts=['boxhatter = boxhatter.main:main'])
 
     return {'actions': [build],
             'task_dep': ['json_schema_repo',

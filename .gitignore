@@ -1,5 +1,5 @@
 /.doit.*
 /build
-/src_py/hatter/json_schema_repo.json
-/src_py/hatter/ui/main.css
+/src_py/boxhatter/json_schema_repo.json
+/src_py/boxhatter/ui/main.css
 __pycache__

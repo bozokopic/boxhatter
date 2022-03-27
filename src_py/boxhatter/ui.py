@@ -4,8 +4,8 @@ import datetime
 from hat import aio
 import aiohttp.web
 
-from hatter import common
-import hatter.server
+from boxhatter import common
+import boxhatter.server
 
 
 static_dir: Path = common.package_path / 'ui'
@@ -13,7 +13,7 @@ static_dir: Path = common.package_path / 'ui'
 
 async def create(host: str,
                  port: int,
-                 server: hatter.server.Server
+                 server: boxhatter.server.Server
                  ) -> 'UI':
     ui = UI()
     ui._server = server
@@ -64,13 +64,13 @@ class UI(aio.Resource):
 
         body = (f'{_generate_repos(self._server.repos)}\n'
                 f'{_generate_commits(commits)}')
-        return _create_html_response('hatter', body)
+        return _create_html_response('Box Hatter', body)
 
     async def _process_get_repo(self, request):
         repo = self._get_repo(request)
         commits = await self._server.get_commits(repo)
 
-        title = f'hatter - {repo}'
+        title = f'Box Hatter - {repo}'
         body = (f'{_generate_commits(commits)}\n'
                 f'{_generate_run(repo)}')
         return _create_html_response(title, body)
@@ -78,7 +78,7 @@ class UI(aio.Resource):
     async def _process_get_commit(self, request):
         commit = await self._get_commit(request)
 
-        title = f'hatter - {commit.repo}/{commit.hash}'
+        title = f'Box Hatter - {commit.repo}/{commit.hash}'
         body = _generate_commit(commit)
         return _create_html_response(title, body)
 

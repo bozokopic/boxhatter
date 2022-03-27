@@ -13,17 +13,17 @@ from hat import json
 import appdirs
 import click
 
-from hatter import common
-import hatter.backend
-import hatter.server
-import hatter.ui
+from boxhatter import common
+import boxhatter.backend
+import boxhatter.server
+import boxhatter.ui
 
 
-user_config_dir: Path = Path(appdirs.user_config_dir('hatter'))
-user_data_dir: Path = Path(appdirs.user_data_dir('hatter'))
+user_config_dir: Path = Path(appdirs.user_config_dir('boxhatter'))
+user_data_dir: Path = Path(appdirs.user_data_dir('boxhatter'))
 
 default_conf_path: Path = user_config_dir / 'server.yaml'
-default_db_path: Path = user_data_dir / 'hatter.db'
+default_db_path: Path = user_data_dir / 'boxhatter.db'
 
 ssh_key_path: typing.Optional[Path] = None
 
@@ -58,7 +58,7 @@ def main(log_level: str,
 
 
 @main.command()
-@click.option('--action', default='.hatter.yaml',
+@click.option('--action', default='.boxhatter.yaml',
               help="action file path inside repository")
 @click.option('--env', multiple=True,
               help="environment variables")
@@ -93,16 +93,16 @@ def execute(action: str,
                        check=True)
 
         conf = json.decode_file(repo_dir / action)
-        common.json_schema_repo.validate('hatter://action.yaml#', conf)
+        common.json_schema_repo.validate('boxhatter://action.yaml#', conf)
 
         image = conf['image']
         command = conf['command']
         subprocess.run(['podman', 'run', '-i', '--rm',
-                        '-v', f'{repo_dir}:/hatter',
+                        '-v', f'{repo_dir}:/boxhatter',
                         *itertools.chain.from_iterable(('--env', i)
                                                        for i in env),
                         image, '/bin/sh'],
-                       input=f'set -e\ncd /hatter\n{command}\n',
+                       input=f'set -e\ncd /boxhatter\n{command}\n',
                        encoding='utf-8',
                        check=True)
 
@@ -113,17 +113,17 @@ def execute(action: str,
 @click.option('--port', default=24000, type=int,
               help="listening TCP port (default 24000)")
 @click.option('--conf', default=default_conf_path, metavar='PATH', type=Path,
-              help="configuration defined by hatter://server.yaml# "
-                   "(default $XDG_CONFIG_HOME/hatter/server.yaml)")
+              help="configuration defined by boxhatter://server.yaml# "
+                   "(default $XDG_CONFIG_HOME/boxhatter/server.yaml)")
 @click.option('--db', default=default_db_path, metavar='PATH', type=Path,
               help="sqlite database path "
-                   "(default $XDG_CONFIG_HOME/hatter/hatter.db")
+                   "(default $XDG_CONFIG_HOME/boxhatter/boxhatter.db")
 def server(host: str,
            port: int,
            conf: Path,
            db: Path):
     conf = json.decode_file(conf)
-    common.json_schema_repo.validate('hatter://server.yaml#', conf)
+    common.json_schema_repo.validate('boxhatter://server.yaml#', conf)
 
     with contextlib.suppress(asyncio.CancelledError):
         aio.run_asyncio(async_server(host, port, conf, db))
@@ -136,13 +136,13 @@ async def async_server(host: str,
     async_group = aio.Group()
 
     try:
-        backend = await hatter.backend.create(db_path)
+        backend = await boxhatter.backend.create(db_path)
         _bind_resource(async_group, backend)
 
-        server = await hatter.server.create(conf, backend)
+        server = await boxhatter.server.create(conf, backend)
         _bind_resource(async_group, server)
 
-        ui = await hatter.ui.create(host, port, server)
+        ui = await boxhatter.ui.create(host, port, server)
         _bind_resource(async_group, ui)
 
         await async_group.wait_closing()
@@ -158,5 +158,5 @@ def _bind_resource(async_group, resource):
 
 
 if __name__ == '__main__':
-    sys.argv[0] = 'hatter'
+    sys.argv[0] = 'boxhatter'
     main()

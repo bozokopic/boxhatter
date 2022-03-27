@@ -1,6 +1,6 @@
 ---
 "$schema": "http://json-schema.org/schema#"
-id: "hatter://action.yaml#"
+id: "boxhatter://action.yaml#"
 type: object
 required:
     - image
