@@ -23,7 +23,7 @@ user_config_dir: Path = Path(appdirs.user_config_dir('boxhatter'))
 user_data_dir: Path = Path(appdirs.user_data_dir('boxhatter'))
 
 default_conf_path: Path = user_config_dir / 'server.yaml'
-default_db_path: Path = user_data_dir / 'boxhatter.db'
+default_db_path: Path = user_data_dir / 'server.db'
 
 
 @click.group()
@@ -123,7 +123,7 @@ def execute(action: str,
                    "(default $XDG_CONFIG_HOME/boxhatter/server.yaml)")
 @click.option('--db', default=default_db_path, metavar='PATH', type=Path,
               help="sqlite database path "
-                   "(default $XDG_CONFIG_HOME/boxhatter/boxhatter.db")
+                   "(default $XDG_CONFIG_HOME/boxhatter/server.db")
 def server(host: str,
            port: int,
            conf: Path,

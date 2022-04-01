@@ -1,5 +1,7 @@
 from pathlib import Path
 import datetime
+import time
+import uuid
 
 from hat import aio
 import aiohttp.web
@@ -23,8 +25,10 @@ async def create(host: str,
     get_routes = (
         aiohttp.web.get(path, handler) for path, handler in (
             ('/', ui._process_get_root),
+            ('/feed', ui._process_get_feed),
             ('/repo/{repo}', ui._process_get_repo),
-            ('/repo/{repo}/commit/{commit}', ui._process_get_commit)))
+            ('/repo/{repo}/commit/{commit}', ui._process_get_commit),
+            ('/repo/{repo}/feed', ui._process_get_feed)))
     post_routes = (
         aiohttp.web.post(path, handler) for path, handler in (
             ('/repo/{repo}/run', ui._process_post_run),
@@ -56,7 +60,7 @@ async def create(host: str,
 class UI(aio.Resource):
 
     @property
-    def async_group(self):
+    def async_group(self) -> aio.Group:
         return self._async_group
 
     async def _process_get_root(self, request):
@@ -64,7 +68,7 @@ class UI(aio.Resource):
 
         body = (f'{_generate_repos(self._server.repos)}\n'
                 f'{_generate_commits(commits)}')
-        return _create_html_response('Box Hatter', body)
+        return _create_html_response('Box Hatter', body, '/feed')
 
     async def _process_get_repo(self, request):
         repo = self._get_repo(request)
@@ -73,14 +77,26 @@ class UI(aio.Resource):
         title = f'Box Hatter - {repo}'
         body = (f'{_generate_commits(commits)}\n'
                 f'{_generate_run(repo)}')
-        return _create_html_response(title, body)
+        feed_url = f'/repo/{repo}/feed'
+        return _create_html_response(title, body, feed_url)
 
     async def _process_get_commit(self, request):
         commit = await self._get_commit(request)
 
         title = f'Box Hatter - {commit.repo}/{commit.hash}'
         body = _generate_commit(commit)
-        return _create_html_response(title, body)
+        feed_url = f'/repo/{commit.repo}/feed'
+        return _create_html_response(title, body, feed_url)
+
+    async def _process_get_feed(self, request):
+        repo = (self._get_repo(request) if 'repo' in request.match_info
+                else None)
+        commits = await self._server.get_commits(repo)
+
+        title = 'All repositories' if repo is None else f'Repository {repo}'
+        text = _generate_feed(self._server.server_uuid, title, commits)
+        return aiohttp.web.Response(content_type='application/atom+xml',
+                                    text=text)
 
     async def _process_post_run(self, request):
         repo = self._get_repo(request)
@@ -123,9 +139,20 @@ class UI(aio.Resource):
         return commit
 
 
-def _create_html_response(title, body):
-    text = _html_template.format(title=title,
-                                 body=body)
+def _create_html_response(title, body, feed_url):
+    text = (f'<!DOCTYPE html>\n'
+            f'<html>\n'
+            f'<head>\n'
+            f'<meta charset="UTF-8">\n'
+            f'<meta name="viewport" content="width=device-width, initial-scale=1">\n'  # NOQA
+            f'<title>{title}</title>\n'
+            f'<link href="{feed_url}" type="application/atom+xml" rel="alternate" title="{title} feed">\n'  # NOQA
+            f'<link href="/main.css" rel="stylesheet">\n'
+            f'</head>\n'
+            f'<body>\n'
+            f'{body}\n'
+            f'</body>\n'
+            f'</html>\n')
     return aiohttp.web.Response(content_type='text/html',
                                 text=text)
 
@@ -217,16 +244,46 @@ def _format_time(t):
     return datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
 
 
-_html_template = r"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title}</title>
-<link href="/main.css" rel="stylesheet">
-</head>
-<body>
-{body}
-</body>
-</html>
-"""
+def format_feed_time(t):
+    dt = datetime.datetime.utcfromtimestamp(t)
+    return dt.isoformat(timespec='seconds') + 'Z'
+
+
+def _generate_feed(server_uuid, title, commits):
+
+    def get_entry_uuid(commit):
+        return uuid.uuid5(server_uuid, f'{commit.repo}/{commit.hash}')
+
+    def get_entry_title(commit):
+        return f'{commit.repo} - {commit.hash}'
+
+    def get_entry_link(commit):
+        return f'/repo/{commit.repo}/commit/{commit.hash}'
+
+    def get_entry_content(commit):
+        return (f'Status: {commit.status.name}\n'
+                f'Output:\n{commit.output}')
+
+    feed_updated = max((commit.change for commit in commits),
+                       default=int(time.time()))
+
+    entries = '\n'.join(
+        f'<entry>\n'
+        f'<id>urn:uuid:{get_entry_uuid(commit)}</id>\n'
+        f'<title>{get_entry_title(commit)}</title>\n'
+        f'<link href="{get_entry_link(commit)}" />\n'
+        f'<updated>{format_feed_time(commit.change)}</updated>\n'
+        f'<content type="text">{get_entry_content(commit)}</content>\n'
+        f'</entry>'
+        for commit in commits)
+
+    return (f'<?xml version="1.0" encoding="utf-8"?>\n'
+            f'<feed xmlns="http://www.w3.org/2005/Atom">\n'
+            f'<title>{title}</title>\n'
+            f'<id>urn:uuid:{server_uuid}</id>\n'
+            f'<author>\n'
+            f'<name>boxhatter</name>\n'
+            f'</author>\n'
+            f'<updated>{format_feed_time(feed_updated)}</updated>\n'
+            f'{entries}\n'
+            f'</feed>\n')

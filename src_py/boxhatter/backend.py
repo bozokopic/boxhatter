@@ -1,6 +1,7 @@
 from pathlib import Path
 import sqlite3
 import typing
+import uuid
 
 from hat import aio
 
@@ -17,14 +18,26 @@ async def create(db_path: Path
     backend.async_group.spawn(aio.call_on_cancel, backend._executor,
                               _ext_close, backend._db)
 
+    try:
+        backend._server_uuid = await backend._executor(_ext_get_server_uuid,
+                                                       backend._db)
+
+    except BaseException:
+        await aio.uncancellable(backend.async_close())
+        raise
+
     return backend
 
 
 class Backend(aio.Resource):
 
     @property
-    def async_group(self):
+    def async_group(self) -> aio.Group:
         return self._async_group
+
+    @property
+    def server_uuid(self) -> uuid.UUID:
+        return self._server_uuid
 
     async def get_commits(self,
                           repo: typing.Optional[str],
@@ -60,6 +73,9 @@ def _ext_create(db_path):
     try:
         db.executescript(r"""
             PRAGMA journal_mode = OFF;
+            CREATE TABLE IF NOT EXISTS server_uuid (
+                uuid TEXT
+            );
             CREATE TABLE IF NOT EXISTS commits (
                 repo TEXT,
                 hash TEXT,
@@ -81,6 +97,18 @@ def _ext_create(db_path):
 
 def _ext_close(db):
     db.close()
+
+
+def _ext_get_server_uuid(db):
+    cur = db.execute("SELECT * FROM server_uuid")
+    row = cur.fetchone()
+    if row:
+        return uuid.UUID(row[0])
+    server_uuid = uuid.uuid4()
+    cmd = ("INSERT INTO server_uuid VALUES (:uuid)")
+    args = {'uuid': str(server_uuid)}
+    db.execute(cmd, args)
+    return server_uuid
 
 
 def _ext_get_commits(db, repo, statuses, order):

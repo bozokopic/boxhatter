@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 import typing
+import uuid
 
 from hat import aio
 from hat import json
@@ -59,8 +60,12 @@ async def create(conf: json.Data,
 class Server(aio.Resource):
 
     @property
-    def async_group(self):
+    def async_group(self) -> aio.Group:
         return self._async_group
+
+    @property
+    def server_uuid(self) -> uuid.UUID:
+        return self._backend.server_uuid
 
     @property
     def repos(self) -> typing.Set[str]:
