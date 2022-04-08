@@ -41,7 +41,9 @@ async def create(conf: json.Data,
         commits = await backend.get_commits(repo=None,
                                             statuses={common.Status.PENDING,
                                                       common.Status.RUNNING},
-                                            order=common.Order.ASC)
+                                            order=common.Order.ASC,
+                                            limit=None,
+                                            offset=None)
 
         for commit in commits:
             commit = commit._replace(change=int(time.time()),
@@ -73,10 +75,14 @@ class Server(aio.Resource):
 
     async def get_commits(self,
                           repo: typing.Optional[str],
+                          limit: int,
+                          offset: int
                           ) -> typing.List[common.Commit]:
         return await self._backend.get_commits(repo=repo,
                                                statuses=None,
-                                               order=common.Order.DESC)
+                                               order=common.Order.DESC,
+                                               limit=limit,
+                                               offset=offset)
 
     async def get_commit(self,
                          repo: str,

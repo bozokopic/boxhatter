@@ -42,10 +42,13 @@ class Backend(aio.Resource):
     async def get_commits(self,
                           repo: typing.Optional[str],
                           statuses: typing.Optional[typing.Set[common.Status]],
-                          order: common.Order
+                          order: common.Order,
+                          limit: typing.Optional[int],
+                          offset: typing.Optional[int]
                           ) -> typing.List[common.Commit]:
         return await self.async_group.spawn(
-            self._executor, _ext_get_commits, self._db, repo, statuses, order)
+            self._executor, _ext_get_commits, self._db, repo, statuses, order,
+            limit, offset)
 
     async def get_commit(self,
                          repo: str,
@@ -111,18 +114,25 @@ def _ext_get_server_uuid(db):
     return server_uuid
 
 
-def _ext_get_commits(db, repo, statuses, order):
+def _ext_get_commits(db, repo, statuses, order, limit, offset):
+    args = {}
     cmd = "SELECT * FROM commits"
     where = []
     if repo:
         where.append("repo = :repo")
+        args['repo'] = repo
     if statuses:
         status_values = (str(status.value) for status in statuses)
         where.append(f"status IN ({', '.join(status_values)})")
     if where:
         cmd += f" WHERE {' AND '.join(where)}"
     cmd += f" ORDER BY change {order.value}"
-    args = {'repo': repo}
+    if limit is not None:
+        cmd += " LIMIT :limit"
+        args['limit'] = limit
+        if offset:
+            cmd += " OFFSET :offset"
+            args['offset'] = offset
     cur = db.execute(cmd, args)
     return [_commit_from_row(row) for row in cur]
 

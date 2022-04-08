@@ -67,6 +67,21 @@ body {
         }
     }
 
+    .pagination {
+        display: grid;
+        grid-template-areas: "previous next";
+        padding: 0.5rem 1rem 0rem 1rem;
+
+        & > .previous {
+            grid-area: previous;
+        }
+
+        & > .next {
+            grid-area: next;
+            justify-self: end;
+        }
+    }
+
     .run {
         margin: 1rem 0;
         text-align: right;

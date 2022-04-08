@@ -1,4 +1,5 @@
 from pathlib import Path
+import contextlib
 import datetime
 import time
 import uuid
@@ -11,6 +12,8 @@ import boxhatter.server
 
 
 static_dir: Path = common.package_path / 'ui'
+
+pagination_limit: int = 20
 
 
 async def create(host: str,
@@ -64,18 +67,32 @@ class UI(aio.Resource):
         return self._async_group
 
     async def _process_get_root(self, request):
-        commits = await self._server.get_commits(None)
+        page = self._get_page(request)
+        offset = page * pagination_limit
+        commits = await self._server.get_commits(repo=None,
+                                                 limit=pagination_limit + 1,
+                                                 offset=offset)
+        commits, more_follows = (commits[:pagination_limit],
+                                 len(commits) > pagination_limit)
 
         body = (f'{_generate_repos(self._server.repos)}\n'
-                f'{_generate_commits(commits)}')
+                f'{_generate_commits(commits)}\n'
+                f'{_generate_pagination(page, more_follows)}')
         return _create_html_response('Box Hatter', body, '/feed')
 
     async def _process_get_repo(self, request):
         repo = self._get_repo(request)
-        commits = await self._server.get_commits(repo)
+        page = self._get_page(request)
+        offset = page * pagination_limit
+        commits = await self._server.get_commits(repo=repo,
+                                                 limit=pagination_limit + 1,
+                                                 offset=offset)
+        commits, more_follows = (commits[:pagination_limit],
+                                 len(commits) > pagination_limit)
 
         title = f'Box Hatter - {repo}'
         body = (f'{_generate_commits(commits)}\n'
+                f'{_generate_pagination(page, more_follows)}\n'
                 f'{_generate_run(repo)}')
         feed_url = f'/repo/{repo}/feed'
         return _create_html_response(title, body, feed_url)
@@ -129,6 +146,14 @@ class UI(aio.Resource):
         if repo not in self._server.repos:
             raise aiohttp.web.HTTPBadRequest()
         return repo
+
+    def _get_page(self, request):
+        page_str = request.query.get('page', '0')
+        with contextlib.suppress(ValueError):
+            page = int(page_str)
+            if page >= 0:
+                return page
+        raise aiohttp.web.HTTPBadRequest()
 
     async def _get_commit(self, request):
         repo = self._get_repo(request)
@@ -220,6 +245,22 @@ def _generate_commit(commit):
             f'<label>Output:</label><pre>{commit.output}</pre>\n'
             f'<label></label><div>{run_button}{remove_button}</div>\n'
             f'</div>')
+
+
+def _generate_pagination(page, more_follows):
+    content = ''
+
+    if page > 0:
+        content += (f'<a class="previous" href="?page={page - 1}">'
+                    f'&lt; Previous'
+                    f'</a>')
+
+    if more_follows:
+        content += (f'<a class="next" href="?page={page + 1}">'
+                    f'Next &gt;'
+                    f'</a>')
+
+    return f'<div class="pagination">{content}</div>'
 
 
 def _generate_run(repo):
