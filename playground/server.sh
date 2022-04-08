@@ -5,4 +5,5 @@
 exec $PYTHON -m boxhatter server \
     --conf $RUN_PATH/server.yaml \
     --db $DATA_PATH/boxhatter.db \
+    --cache $DATA_PATH/cache \
     "$@"

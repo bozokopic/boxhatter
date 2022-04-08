@@ -1,3 +1,3 @@
 repos:
     hat-util:
-        url: ../../hat/hat-util
+        url: ../../../hat/hat-util

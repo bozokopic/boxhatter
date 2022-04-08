@@ -21,9 +21,11 @@ import boxhatter.ui
 
 user_config_dir: Path = Path(appdirs.user_config_dir('boxhatter'))
 user_data_dir: Path = Path(appdirs.user_data_dir('boxhatter'))
+user_cache_dir: Path = Path(appdirs.user_cache_dir('boxhatter'))
 
 default_conf_path: Path = user_config_dir / 'server.yaml'
 default_db_path: Path = user_data_dir / 'server.db'
+default_cache_path: Path = user_cache_dir
 
 
 @click.group()
@@ -67,10 +69,16 @@ def main(log_level: str,
               help="action file path inside repository")
 @click.option('--env', multiple=True,
               help="environment variables")
+@click.option('--cache-src', metavar='PATH', default=None, type=Path,
+              help="path to persisted cache folder")
+@click.option('--cache-dst', metavar='PATH', default='.boxhatter_cache',
+              help="relative path to cache folder inside repository")
 @click.argument('url', required=True)
 @click.argument('ref', required=False, default='HEAD')
 def execute(action: str,
             env: typing.Tuple[str],
+            cache_src: typing.Optional[Path],
+            cache_dst: str,
             url: str,
             ref: str):
     with contextlib.suppress(Exception):
@@ -100,11 +108,15 @@ def execute(action: str,
         conf = json.decode_file(repo_dir / action)
         common.json_schema_repo.validate('boxhatter://action.yaml#', conf)
 
+        volumes = [f'{repo_dir}:/boxhatter']
+        if cache_src:
+            volumes.append(f'{cache_src.resolve()}:/boxhatter/{cache_dst}')
+
         image = conf['image']
         command = conf['command']
 
         cmd = [common.settings.engine, 'run', '-i', '--rm',
-               '-v', f'{repo_dir}:/boxhatter',
+               *itertools.chain.from_iterable(('-v', i) for i in volumes),
                *itertools.chain.from_iterable(('--env', i) for i in env),
                image, '/bin/sh']
         subprocess.run(cmd,
@@ -123,29 +135,34 @@ def execute(action: str,
                    "(default $XDG_CONFIG_HOME/boxhatter/server.yaml)")
 @click.option('--db', default=default_db_path, metavar='PATH', type=Path,
               help="sqlite database path "
-                   "(default $XDG_CONFIG_HOME/boxhatter/server.db")
+                   "(default $XDG_DATA_HOME/boxhatter/server.db")
+@click.option('--cache', default=default_cache_path, metavar='PATH', type=Path,
+              help="persisted cache path (default $XDG_CACHE_HOME/boxhatter")
 def server(host: str,
            port: int,
            conf: Path,
-           db: Path):
+           db: Path,
+           cache: Path):
     conf = json.decode_file(conf)
     common.json_schema_repo.validate('boxhatter://server.yaml#', conf)
+    cache.mkdir(parents=True, exist_ok=True)
 
     with contextlib.suppress(asyncio.CancelledError):
-        aio.run_asyncio(async_server(host, port, conf, db))
+        aio.run_asyncio(async_server(host, port, conf, db, cache))
 
 
 async def async_server(host: str,
                        port: int,
                        conf: json.Data,
-                       db_path: Path):
+                       db_path: Path,
+                       cache_path: Path):
     async_group = aio.Group()
 
     try:
         backend = await boxhatter.backend.create(db_path)
         _bind_resource(async_group, backend)
 
-        server = await boxhatter.server.create(conf, backend)
+        server = await boxhatter.server.create(conf, cache_path, backend)
         _bind_resource(async_group, server)
 
         ui = await boxhatter.ui.create(host, port, server)

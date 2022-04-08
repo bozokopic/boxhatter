@@ -35,6 +35,7 @@ async def create(host: str,
     post_routes = (
         aiohttp.web.post(path, handler) for path, handler in (
             ('/repo/{repo}/run', ui._process_post_run),
+            ('/repo/{repo}/clear', ui._process_post_clear),
             ('/repo/{repo}/commit/{commit}/remove', ui._process_post_remove)))
     webhook_route = aiohttp.web.route('*', '/repo/{repo}/webhook',
                                       ui._process_webhook)
@@ -93,7 +94,8 @@ class UI(aio.Resource):
         title = f'Box Hatter - {repo}'
         body = (f'{_generate_commits(commits)}\n'
                 f'{_generate_pagination(page, more_follows)}\n'
-                f'{_generate_run(repo)}')
+                f'{_generate_run(repo)}\n'
+                f'{_generate_clear(repo)}')
         feed_url = f'/repo/{repo}/feed'
         return _create_html_response(title, body, feed_url)
 
@@ -127,6 +129,13 @@ class UI(aio.Resource):
 
         url = f'/repo/{commit.repo}/commit/{commit.hash}'
         raise aiohttp.web.HTTPFound(url)
+
+    async def _process_post_clear(self, request):
+        repo = self._get_repo(request)
+
+        await self._server.clear_cache(repo)
+
+        raise aiohttp.web.HTTPFound(f'/repo/{repo}')
 
     async def _process_post_remove(self, request):
         commit = await self._get_commit(request)
@@ -268,6 +277,14 @@ def _generate_run(repo):
             f'<form method="post" action="/repo/{repo}/run">\n'
             f'<input type="text" name="hash">\n'
             f'<input type="submit" value="Run commit">\n'
+            f'</form>\n'
+            f'</div>')
+
+
+def _generate_clear(repo):
+    return (f'<div class="clear">\n'
+            f'<form method="post" action="/repo/{repo}/clear">\n'
+            f'<input type="submit" value="Clear cache">\n'
             f'</form>\n'
             f'</div>')
 

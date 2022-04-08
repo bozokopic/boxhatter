@@ -37,6 +37,10 @@ properties:
                         type: string
                         decription: action file path inside repository
                         default: ".boxhatter.yaml"
+                    cache:
+                        type: string
+                        description: cache folder path inside repository
+                        default: ".boxhatter_cache"
                     min_sync_delay:
                         type:
                             - number

@@ -1,9 +1,11 @@
+from pathlib import Path
 import asyncio
 import collections
 import contextlib
 import itertools
 import multiprocessing
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -18,10 +20,12 @@ import boxhatter.backend
 
 
 async def create(conf: json.Data,
+                 cache_path: Path,
                  backend: boxhatter.backend.Backend
                  ) -> 'Server':
     server = Server()
     server._conf = conf
+    server._cache_path = cache_path
     server._backend = backend
     server._async_group = aio.Group()
     server._repos = set(conf['repos'].keys())
@@ -103,6 +107,10 @@ class Server(aio.Resource):
         self._run_queue.put_nowait(commit)
         return commit
 
+    async def clear_cache(self, repo: str):
+        # TODO run in executor
+        shutil.rmtree(str(self._cache_path / repo), ignore_errors=True)
+
     def sync_repo(self, repo: str):
         self._sync_events[repo].set()
 
@@ -151,6 +159,8 @@ class Server(aio.Resource):
                 action = repo_conf.get('action', '.boxhatter.yaml')
                 env = {**self._conf.get('env', {}),
                        **repo_conf.get('env', {})}
+                cache_src = self._cache_path / commit.repo
+                cache_dst = repo_conf.get('cache', '.boxhatter_cache')
                 url = repo_conf['url']
                 ref = commit.hash
 
@@ -160,8 +170,11 @@ class Server(aio.Resource):
                 await self._backend.update_commit(commit)
 
                 try:
+                    cache_src.mkdir(parents=True, exist_ok=True)
                     output = await _execute(action=action,
                                             env=env,
+                                            cache_src=cache_src,
+                                            cache_dst=cache_dst,
                                             url=url,
                                             ref=ref)
                     status = common.Status.SUCCESS
@@ -179,7 +192,7 @@ class Server(aio.Resource):
             self.close()
 
 
-async def _execute(action, env, url, ref):
+async def _execute(action, env, cache_src, cache_dst, url, ref):
     cmd = [sys.executable, '-m', 'boxhatter',
            '--log-level', common.settings.log_level,
            *(['--ssh-key', common.settings.ssh_key]
@@ -188,6 +201,8 @@ async def _execute(action, env, url, ref):
            'execute',
            '--action', action,
            *itertools.chain.from_iterable(('--env', i) for i in env),
+           '--cache-src', str(cache_src),
+           '--cache-dst', cache_dst,
            url, ref]
 
     p = await asyncio.create_subprocess_exec(*cmd,
