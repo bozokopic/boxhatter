@@ -79,8 +79,8 @@ class Server(aio.Resource):
 
     async def get_commits(self,
                           repo: typing.Optional[str],
-                          limit: int,
-                          offset: int
+                          limit: typing.Optional[int],
+                          offset: typing.Optional[int]
                           ) -> typing.List[common.Commit]:
         return await self._backend.get_commits(repo=repo,
                                                statuses=None,

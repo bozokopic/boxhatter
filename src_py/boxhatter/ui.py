@@ -110,7 +110,7 @@ class UI(aio.Resource):
     async def _process_get_feed(self, request):
         repo = (self._get_repo(request) if 'repo' in request.match_info
                 else None)
-        commits = await self._server.get_commits(repo)
+        commits = await self._server.get_commits(repo, None, None)
 
         title = 'All repositories' if repo is None else f'Repository {repo}'
         text = _generate_feed(self._server.server_uuid, title, commits)
